@@ -1,0 +1,6 @@
+build/
+*.dol
+*.elf
+
+#APFS metadata
+**/.DS_Store
