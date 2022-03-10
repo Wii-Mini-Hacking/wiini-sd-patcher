@@ -152,37 +152,53 @@ int main(int argc, char **argv) {
         }
     }
 
+    #ifndef TEST_MODE //Define to disable IOS calls for dirty Dolphin testing of the UI
     printf("Initializing FAT\n");
     Debug("Initializing FAT\n");
 
-	if (!initFAT()) {
+    if (!initFAT()) {
         printf("Couldn't init FAT\n");
         Debug("Couldn't init FAT\n");
         exit(1);
     }
 
     PatchIOS(true);
+    loadIOSModules();
+    printf("\x1b[2;0HInitialization complete.");
+    #endif
 
     // This function initialises the attached controllers
     PAD_Init();
     WPAD_Init();
 
-    loadIOSModules();
     Debug("Starting install\n");
     bool nowifi = true;
-    bool vga = false;
     bool confirmInstall = false;
     do {
         printf("\x1b[2J");
         fflush(stdout);
-        printf("\x1b[2;0HInitialization complete.");
-        printf("\x1b[3;0HIt is strongly recommended to patch out the WiFi module.\nIt is still possible to enable WiFi on the fly when booting a Wii game.");
-        printf("\x1b[5;0HIf you enable VGA, YPbPr component video input won't work anymore.\nMake sure to select the right option");
-        printf("\x1b[7;0HSelect the desired install options:");
+        printf("\x1b[47m\x1b[31m\x1b[0;25HWii mini SD Patcher v1.0-Beta1\x1b[0;80H");
+        printf("\x1b[5;1H\x1b[40m\x1b[37mPlease make sure the following files are present\nin the top-level directory of your USB drive:\n");
+        //41 + fileExists(file) Sets the bgcolor to red if file is missing, green if present
+        printf("\x1b[42m    IOS36-64-v3608.wad\n"); // these are checked for presence in loadIOSModules
+        printf("\x1b[42m    IOS58-64-v6176.wad\n");
+        printf("\x1b[42m    IOS80-64-v6944.wad\n");
+        //printf("\x1b[%dm    0000000100000002v514.wad\n", 41 + fileExists("/0000000100000002v514.wad")); -- will be added in the future
+        printf("\x1b[14;1H\x1b[40mThese files can be obtained from NUS using sharpii or NUSDownloader\n\n");
+        printf("Start/Home: Run install process\tA+B: Exit\n");
 
-        printf("\x1b[14;0HRight/Left: Toggle option\tUp/Down: Move cursor\nStart/Home: Run install process\tA+B: Exit");
+        printf("\x1b[26;1HBased on RVLoader Installer v1.5 by Aurelio,\n without whose help this would have never been possible.");
+        printf("\x1b[28;1HAdapted for the Wii mini Hacking community by Devnol.");
+        printf("\x1b[29;1HPowered by devkitPPC, Divine Pizza and mediocre quality souvlaki.");
 
-        u8 cursor = 0;
+        
+        
+
+        // Option selector will be readded in future versions for other features
+        //printf("\x1b[7;0HSelect the desired install options:");
+        //printf("\x1b[14;0HRight/Left: Toggle option\tUp/Down: Move cursor\nStart/Home: Run install process\tA+B: Exit");
+
+        //u8 cursor = 0;
         while (1) {
             PAD_ScanPads();
             WPAD_ScanPads();
@@ -192,7 +208,7 @@ int main(int argc, char **argv) {
             int wDown = WPAD_ButtonsDown(0);
             int wHeld = WPAD_ButtonsHeld(0);
 
-            if (down & PAD_BUTTON_DOWN || wDown & WPAD_BUTTON_DOWN) {
+            /*if (down & PAD_BUTTON_DOWN || wDown & WPAD_BUTTON_DOWN) {
                 if (cursor < 1)
                     cursor++;
             }
@@ -207,7 +223,7 @@ int main(int argc, char **argv) {
                     nowifi = !nowifi;
                 if (cursor == 1)
                     vga = !vga;
-            }
+            }*/
 
             if (down & PAD_BUTTON_START || wDown & WPAD_BUTTON_HOME)
                 break;
@@ -219,8 +235,8 @@ int main(int argc, char **argv) {
                 exit(0);
             }
 
-            printf("\x1b[9;0H%c Patch out WiFi: %s", (cursor == 0) ? '>' : ' ', nowifi ? "Yes" : "No ");
-            printf("\x1b[10;0H%c Enable VGA: %s", (cursor == 1) ? '>' : ' ', vga ? "Yes" : "No ");
+            //printf("\x1b[9;0H%c Patch out WiFi: %s", (cursor == 0) ? '>' : ' ', nowifi ? "Yes" : "No ");
+            //printf("\x1b[10;0H%c Enable VGA: %s", (cursor == 1) ? '>' : ' ', vga ? "Yes" : "No ");
 
             VIDEO_WaitVSync();
         }
@@ -228,9 +244,8 @@ int main(int argc, char **argv) {
         printf("\x1b[2J");
         fflush(stdout);
         printf("\x1b[2;0HYou have selected:");
-        printf("\x1b[4;0HPatch out WiFi: %s", nowifi ? "Yes" : "No ");
-        printf("\x1b[5;0HEnable VGA: %s", vga ? "Yes" : "No ");
-        printf("\x1b[7;0HHold the Start/Home button for 2 seconds to begin the install process.\nPress B to go back and change your options.");
+        printf("\x1b[4;0HInstall nowifi IOS for SD support : %s", nowifi ? "Yes" : "No ");
+        printf("\x1b[7;0HHold the Start/Home button for 2 seconds to begin the install process.\nPress B to return to the previous screen.");
 
         u64 timer = gettime();
 
@@ -275,24 +290,7 @@ int main(int argc, char **argv) {
     printf("Finished IOS install\n");
     printf("Exiting...");
     exit(0);
-    //if (checkMX()) {
-    //    FILE* fp;
-    //    printf("MX found. Copying font file\n");
-    //    void *fontbuffer = memalign(32, 0x50000);
-    //    __SYS_ReadROM((void*)fontbuffer,0x50000,0x1AFF00);
-    //    fp = fopen("/apps/nintendont/fonts.bin", "wb");
-    //    if (fp) {
-    //        fwrite(fontbuffer, 1, 0x1AFF00, fp);
-    //        fclose(fp);
-    //    }
 
-    //    fp = fopen("/rvloader/fonts.bin", "wb");
-    //    if (fp) {
-    //        fwrite(fontbuffer, 1, 0x1AFF00, fp);
-    //        fclose(fp);
-    //    }
-    //    free(fontbuffer);
-    //}
     //printf("Now installing Priiloader\n");
     //Install Priiloader
     //installPriiloader(vga);

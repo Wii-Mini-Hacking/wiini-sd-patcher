@@ -25,7 +25,7 @@ INCLUDES	:=	include common/include
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE)
+CFLAGS	= -g -O2 -Wall $(MACHDEP) $(INCLUDE) $(USERFLAGS)
 CXXFLAGS	=	$(CFLAGS)
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
@@ -103,6 +103,10 @@ $(BUILD): $(SUBPROJECTS)
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 	@cp $(TARGET).dol boot.dol
 
+#---------------------------------------------------------------------------------
+test:
+#only works on mac
+	@open -a Dolphin.app wiini-sd-patcher.dol 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...

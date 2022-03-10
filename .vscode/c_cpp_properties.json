@@ -7,7 +7,7 @@
                 "/opt/devkitpro/libogc/include",
                 "/opt/devkitpro/devkitPPC/powerpc-eabi/include"
             ],
-            "defines": ["__wii__", "HW_RVL"],
+            "defines": ["__wii__", "HW_RVL", "__cplusplus"],
             "macFrameworkPath": [],
             "compilerPath": "/opt/devkitpro/devkitPPC/bin/powerpc-eabi-gcc",
             "cStandard": "gnu17",

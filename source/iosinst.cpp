@@ -133,12 +133,12 @@ void brute_tik(tik *p_tik) {
 
         if (hash[0]==0) return;
     }
-    printf("Unable to fix tik :(\n");
+    printf("Unable to fix ticket :(\n");
     exit(5);
 }
 
 void forge_tmd(signed_blob *s_tmd) {
-    printf("forging tmd sig\n");
+    printf("forging tmd signature\n");
     zero_sig(s_tmd);
     tmd* myTMD = (tmd*)SIGNATURE_PAYLOAD(s_tmd);
     if ((myTMD->title_id & 0xFF) == 58) {
@@ -149,7 +149,7 @@ void forge_tmd(signed_blob *s_tmd) {
 }
 
 void forge_tik(signed_blob *s_tik) {
-    printf("forging tik sig\n");
+    printf("forging ticket signature\n");
     zero_sig(s_tik);
     brute_tik((tik*)SIGNATURE_PAYLOAD(s_tik));
 }
@@ -347,8 +347,17 @@ void change_tmd_title_id(signed_blob *s_tmd, u32 titleid1, u32 titleid2) {
     p_tmd->title_id = title_id;
 }
 
+bool fileExists(const char* path) {
+    FILE* fp = fopen(path, "rb");
+    bool ret;
+
+    fp ? ret = 1 : ret = 0;
+    fclose(fp);
+    return ret;
+}
+
 void loadIOSModules() {
-    char path[256] ALIGNED(32);
+    //char path[256] ALIGNED(32);
     char Entry[0x1C] ALIGNED(32);
 
     //Sanity check
@@ -372,58 +381,60 @@ void loadIOSModules() {
     }
     IOS_Close(cfd);
 
-    //Look for WADs if needed or build them from installed modules
+
+    //Look for WADs
     for (u32 slot = 0; slot < 3; slot++) {
         //if (match[slot] != IOSNModules[slot]) {
             //printf("Couldn't find all modules for IOS%u. Checking for WAD...\n", iosSlotList[slot]);
-            FILE* fp = fopen(IOSWADPaths[slot], "rb");
-            if (!fp) {
-                printf("Couldn't find IOS%u WAD at %s\n", iosSlotList[slot], IOSWADPaths[slot]);
-                udelay(3000000);
-                exit(0);
-            }
-            fclose(fp);
-            if (openWAD(IOSWADPaths[slot], &IOSWads[slot])) {
-                printf("Successfully loaded IOS%u WAD\n", iosSlotList[slot]);
-            } else {
-                printf("Failed to load IOS%u WAD at %s\n", iosSlotList[slot], IOSWADPaths[slot]);
-                udelay(3000000);
-                exit(0);
-            }
-        //} else {
-        //    printf("Found all the needed IOS%u modules in the NAND\n", iosSlotList[slot]);
-        //    Debug("Found all the needed IOS%u modules in the NAND\n", iosSlotList[slot]);
-        //    //Build a virtual IOS WAD from NAND
-        //    IOSWads[slot].header.certSize = haxx_certs_size;
-        //    IOSWads[slot].certs = (signed_blob*)haxx_certs;
-        //    sprintf(path, "/ticket/00000001/%08x.tik", iosSlotList[slot]);
-        //    IOSWads[slot].tik = (Ticket*)readNANDFile(path, &IOSWads[slot].header.tikSize);
-        //    sprintf(path, "/title/00000001/%08x/content/title.tmd", iosSlotList[slot]);
-        //    TitleMetaData* temp = (TitleMetaData*)readNANDFile(path, &IOSWads[slot].header.tmdSize);
+        printf("Checking for IOS%d WAD...\n", iosSlotList[slot]);
+           
+        if (!fileExists(IOSWADPaths[slot])) {
+            printf("Couldn't find IOS%u WAD at %s\n", iosSlotList[slot], IOSWADPaths[slot]);
+            udelay(3000000);
+            exit(0);
+        }
+        if (openWAD(IOSWADPaths[slot], &IOSWads[slot])) {
+            printf("Successfully loaded IOS%u WAD\n", iosSlotList[slot]);
+        } else {
+            printf("Failed to load IOS%u WAD at %s\n", iosSlotList[slot], IOSWADPaths[slot]);
+            udelay(3000000);
+            exit(0);
+        }
+        /* Maybe there's a way to add the sd module to the mini IOS instead of remove the wifi module from the normal IOS
+        } else {
+            printf("Found all the needed IOS%u modules in the NAND\n", iosSlotList[slot]);
+            Debug("Found all the needed IOS%u modules in the NAND\n", iosSlotList[slot]);
+            //Build a virtual IOS WAD from NAND
+            IOSWads[slot].header.certSize = haxx_certs_size;
+            IOSWads[slot].certs = (signed_blob*)haxx_certs;
+            sprintf(path, "/ticket/00000001/%08x.tik", iosSlotList[slot]);
+            IOSWads[slot].tik = (Ticket*)readNANDFile(path, &IOSWads[slot].header.tikSize);
+            sprintf(path, "/title/00000001/%08x/content/title.tmd", iosSlotList[slot]);
+            TitleMetaData* temp = (TitleMetaData*)readNANDFile(path, &IOSWads[slot].header.tmdSize);
 
-        //    //Forge tmd
-        //    u32 tmdSize = sizeof(TitleMetaData) + sizeof(Content) * (IOSNModules[slot]);
-        //    IOSWads[slot].header.tmdSize = tmdSize;
-        //    IOSWads[slot].tmd = (TitleMetaData*)memalign(0x20, tmdSize);
-        //    memcpy(IOSWads[slot].tmd, temp, sizeof(TitleMetaData));
-        //    free(temp);
-        //    IOSWads[slot].tmd->BootIndex = IOSBootIndex[slot];
-        //    IOSWads[slot].tmd->ContentCount = IOSNModules[slot];
-        //    IOSWads[slot].data = (u8**)memalign(0x20, (IOSNModules[slot]) * sizeof(u8*));
+            //Forge tmd
+            u32 tmdSize = sizeof(TitleMetaData) + sizeof(Content) * (IOSNModules[slot]);
+            IOSWads[slot].header.tmdSize = tmdSize;
+            IOSWads[slot].tmd = (TitleMetaData*)memalign(0x20, tmdSize);
+            memcpy(IOSWads[slot].tmd, temp, sizeof(TitleMetaData));
+            free(temp);
+            IOSWads[slot].tmd->BootIndex = IOSBootIndex[slot];
+            IOSWads[slot].tmd->ContentCount = IOSNModules[slot];
+            IOSWads[slot].data = (u8**)memalign(0x20, (IOSNModules[slot]) * sizeof(u8*));
 
-        //    //Read the shared modules
-        //    IOSWads[slot].header.dataSize = 0;
-        //    for (u32 i = 0; i < IOSNModules[slot]; i++) {
-        //        u32 tempSize;
-        //        IOSWads[slot].data[i] = readSharedContent(IOSHashes[slot][i], &tempSize);
-        //        IOSWads[slot].tmd->Contents[i].ID = i;
-        //        IOSWads[slot].tmd->Contents[i].Index = i;
-        //        IOSWads[slot].tmd->Contents[i].Type = CONTENT_REQUIRED | CONTENT_SHARED;
-        //        IOSWads[slot].tmd->Contents[i].Size = tempSize;
-        //        memcpy(IOSWads[slot].tmd->Contents[i].SHA1, IOSHashes[slot][i], 0x14);
-        //        IOSWads[slot].header.dataSize += tempSize;
-        //    }
-        //}
+            //Read the shared modules
+            IOSWads[slot].header.dataSize = 0;
+            for (u32 i = 0; i < IOSNModules[slot]; i++) {
+                u32 tempSize;
+                IOSWads[slot].data[i] = readSharedContent(IOSHashes[slot][i], &tempSize);
+                IOSWads[slot].tmd->Contents[i].ID = i;
+                IOSWads[slot].tmd->Contents[i].Index = i;
+                IOSWads[slot].tmd->Contents[i].Type = CONTENT_REQUIRED | CONTENT_SHARED;
+                IOSWads[slot].tmd->Contents[i].Size = tempSize;
+                memcpy(IOSWads[slot].tmd->Contents[i].SHA1, IOSHashes[slot][i], 0x14);
+                IOSWads[slot].header.dataSize += tempSize;
+            }
+        }*/
     }
 }
 
