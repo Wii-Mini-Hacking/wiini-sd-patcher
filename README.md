@@ -4,6 +4,8 @@ Tool to aid in the installation of required software for restoring SD functional
 
 Most of the code was written and documented by Aurelio for RVLoader, without whose help this project would not have been possible.
 
+For information and assistance on how to use this software, please visit [the Wii mini Hacking Discord server](https://discord.gg/7jNHphfDQk)
+
 Features:
 
 - Patch and install original Wii IOS (versions 36, 58 and 80):
