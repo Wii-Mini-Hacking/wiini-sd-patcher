@@ -293,7 +293,7 @@ int main(int argc, char **argv) {
 
     //printf("Now installing Priiloader\n");
     //Install Priiloader
-    //installPriiloader(vga);
+    //installPriiloader(0);
 
     while (1) {
         PAD_ScanPads();

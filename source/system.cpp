@@ -6,7 +6,6 @@
 #include <ogc/lwp_watchdog.h>
 #include <ogc/machine/processor.h>
 #include <wiiuse/wpad.h>
-#include "dolbooter_bin.h"
 #include "stub_bin.h"
 #include "usbstorage_ogc.h"
 #include "debug.h"
@@ -163,56 +162,6 @@ void shutdown() {
     VIDEO_WaitVSync();
     WPAD_Shutdown();
     PAD_Reset(0xf0000000);
-}
-
-void bootDOL(const char* path, const char* args) {
-    u32 level;
-    size_t size;
-    struct __argv arg;
-
-    FILE* fp = fopen(path, "rb");
-    if (!fp)
-        return;
-    fseek(fp, 0, SEEK_END);
-    size = ftell(fp);
-    rewind(fp);
-    fread(EXECUTE_ADDR, 1, size, fp);
-    fclose(fp);
-    DCFlushRange(EXECUTE_ADDR, size);
-
-    memset(&arg, 0, sizeof(arg));
-    if (args != NULL) {
-        arg.argvMagic = ARGV_MAGIC;
-        arg.length = strlen(path) + strlen(args) + 2; //1 extra for the separator between the path and the other args + line ending
-        arg.commandLine = (char*)CMDL_ADDR;
-        sprintf(arg.commandLine, "%s;%s", path, args);
-        int len = strlen(arg.commandLine);
-        for (int i = 0; i < len; i++) {
-            if (arg.commandLine[i] == ';')
-                arg.commandLine[i] = '\0';
-        }
-
-        DCFlushRange(arg.commandLine, len + 1);
-    }
-
-    memmove(ARGS_ADDR, &arg, sizeof(arg));
-    DCFlushRange(ARGS_ADDR, sizeof(arg));
-
-    memcpy(BOOTER_ADDR, dolbooter_bin, dolbooter_bin_size);
-    DCFlushRange(BOOTER_ADDR, dolbooter_bin_size);
-    ICInvalidateRange(BOOTER_ADDR, dolbooter_bin_size);
-
-    entrypoint hbboot_ep = (entrypoint)BOOTER_ADDR;
-
-    shutdown();
-
-    reloadIOS(-1, NULL);
-
-    SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);
-    _CPU_ISR_Disable(level);
-    __exception_closeall();
-    hbboot_ep();
-    _CPU_ISR_Restore(level);
 }
 
 void bootPriiloader() {
