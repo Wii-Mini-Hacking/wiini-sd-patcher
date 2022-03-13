@@ -180,9 +180,9 @@ int main(int argc, char **argv) {
         printf("\x1b[47m\x1b[31m\x1b[0;25HWii mini SD Patcher v1.0-Beta1\x1b[0;80H");
         printf("\x1b[5;1H\x1b[40m\x1b[37mPlease make sure the following files are present\nin the top-level directory of your USB drive:\n");
         //41 + fileExists(file) Sets the bgcolor to red if file is missing, green if present
-        printf("\x1b[42m    IOS36-64-v3608.wad\n"); // these are checked for presence in loadIOSModules
-        printf("\x1b[42m    IOS58-64-v6176.wad\n");
-        printf("\x1b[42m    IOS80-64-v6944.wad\n");
+        printf("\x1b[42m    IOS36-64-3608.wad\n"); // these are checked for presence in loadIOSModules
+        printf("\x1b[42m    IOS58-64-6176.wad\n");
+        printf("\x1b[42m    IOS80-64-6944.wad\n");
         //printf("\x1b[%dm    0000000100000002v514.wad\n", 41 + fileExists("/0000000100000002v514.wad")); -- will be added in the future
         printf("\x1b[14;1H\x1b[40mThese files can be obtained from NUS using sharpii or NUSDownloader\n\n");
         printf("Start/Home: Run install process\tA+B: Exit\n");

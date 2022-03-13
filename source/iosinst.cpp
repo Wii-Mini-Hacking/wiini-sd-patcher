@@ -19,9 +19,9 @@ extern "C" {
     extern void udelay(int us);
 };
 
-#define IOS36_WAD_PATH "/IOS36-64-v3608.wad"
-#define IOS58_WAD_PATH "/IOS58-64-v6176.wad"
-#define IOS80_WAD_PATH "/IOS80-64-v6944.wad"
+#define IOS36_WAD_PATH "/IOS36-64-3608.wad"
+#define IOS58_WAD_PATH "/IOS58-64-6176.wad"
+#define IOS80_WAD_PATH "/IOS80-64-6944.wad"
 
 static u8 commonkey[16] = {0xeb, 0xe4, 0x2a, 0x22, 0x5e, 0x85, 0x93, 0xe4, 0x48, 0xd9, 0xc5, 0x45, 0x73, 0x81, 0xaa, 0xf7};
 
