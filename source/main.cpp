@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
     do {
         printf("\x1b[2J");
         fflush(stdout);
-        printf("\x1b[47m\x1b[31m\x1b[0;25HWii mini SD Patcher v1.0-Beta1\x1b[0;80H");
+        printf("\x1b[47m\x1b[31m\x1b[1;25HWii mini SD Patcher v0.1-Beta2\x1b[0;80H");
         printf("\x1b[5;1H\x1b[40m\x1b[37mPlease make sure the following files are present\nin the top-level directory of your USB drive:\n");
         //41 + fileExists(file) Sets the bgcolor to red if file is missing, green if present
         printf("\x1b[42m    IOS36-64-3608.wad\n"); // these are checked for presence in loadIOSModules
@@ -187,9 +187,9 @@ int main(int argc, char **argv) {
         printf("\x1b[14;1H\x1b[40mThese files can be obtained from NUS using sharpii or NUSDownloader\n\n");
         printf("Start/Home: Run install process\tA+B: Exit\n");
 
-        printf("\x1b[26;1HBased on RVLoader Installer v1.5 by Aurelio,\n without whose help this would have never been possible.");
-        printf("\x1b[28;1HAdapted for the Wii mini Hacking community by Devnol.");
-        printf("\x1b[29;1HPowered by devkitPPC, Divine Pizza and mediocre quality souvlaki.");
+        printf("\x1b[24;1HBased on RVLoader Installer v1.5 by Aurelio,\n without whose help this would have never been possible.");
+        printf("\x1b[26;1HAdapted for the Wii mini Hacking community by Devnol.");
+        printf("\x1b[27;1HPowered by devkitPPC, Divine Pizza and mediocre quality souvlaki.");
 
         
         
@@ -278,7 +278,7 @@ int main(int argc, char **argv) {
     fflush(stdout);
     printf("\x1b[2;0HBeginning installation\n");
 
-    //installIOS(36, 236, true, true); //Install a patched IOS36 with NoWiFi into slot 236
+    installIOS(36, 236, true, true); //Install a patched IOS36 with NoWiFi into slot 236
     //installIOS(58, 240, false, true); //Install a copy of IOS58 with NoWiFi into slot 240
     //installIOS(80, 241, false, true); //Install a copy of IOS80 with NoWiFi into slot 241
 
@@ -289,11 +289,11 @@ int main(int argc, char **argv) {
 
     printf("Finished IOS install\n");
     printf("Exiting...");
-    exit(0);
-
-    //printf("Now installing Priiloader\n");
+    printf("Now installing Priiloader\n");
     //Install Priiloader
-    //installPriiloader(0);
+    installPriiloader(0);
+
+    exit(0);
 
     while (1) {
         PAD_ScanPads();

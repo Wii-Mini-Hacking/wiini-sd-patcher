@@ -110,7 +110,7 @@ test:
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(OUTPUT).elf $(OUTPUT).dol
+	@rm -fr $(BUILD) $(OUTPUT).elf $(OUTPUT).dol Wiini-SD-Patcher/boot.dol
 
 #---------------------------------------------------------------------------------
 run:
