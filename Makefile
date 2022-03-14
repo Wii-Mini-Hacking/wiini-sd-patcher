@@ -101,7 +101,7 @@ all: $(BUILD)
 $(BUILD): $(SUBPROJECTS)
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-	@cp $(TARGET).dol boot.dol
+	@cp $(TARGET).dol Wiini-SD-Patcher/boot.dol
 
 #---------------------------------------------------------------------------------
 test:
