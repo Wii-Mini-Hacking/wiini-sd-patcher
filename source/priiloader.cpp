@@ -1184,7 +1184,7 @@ s8 RemovePriiloader ( void )
     return 1;
 }
 
-void installPriiloader(bool vga) {
+void installPriiloader() {
     s32 ret;
     //Kill everything we have initialized before reloading IOS
     shutdown();

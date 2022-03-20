@@ -2,18 +2,20 @@
 <app version="1">
     <name>Wii mini SD Patcher</name>
     <coder>Devnol and Aurelio</coder>
-    <version>v0.1-beta2</version>
-    <release_date>2022-03-14</release_date>
-    <short_description>Return SD Card support to your Wii mini!</short_description>
+    <version>v1.0-beta1</version>
+    <release_date>2022-03-20</release_date>
+    <short_description>Add SD support to your Wii mini!</short_description>
     <long_description>
         Based on Aurelio's RVLoader Installer, Wii mini SD Patcher allows you to return SD functionality to your Wii mini console by patching the need for a WiFi adapter out of the Wii IOS, making it safe to install on a Wii mini.
         To use, please place the following wads in the root of your USB drive:
-        - IOS36-64-3608.wad
-        - IOS58-64-6176.wad
-        - IOS80-64-6944.wad
+        - IOS36-64-v3608.wad
+        - IOS58-64-v6176.wad
+        - IOS80-64-v6944.wad
+        - 0000000100000002v514.wad (System Menu for PAL consoles)
         You can obtain these files from NUS.
 
         For more information, please visit the project's GitHub page at https://github.com/Wii-Mini-Hacking/wiini-sd-patcher
     </long_description>
     <ahb_access/>
 </app>
+        <!-- - 0000000100000002v513.wad (System Menu for NTSC consoles) --> 

@@ -26,6 +26,14 @@ static GXRModeObj *rmode = NULL;
 
 #define MEM_PROT        0xD8B420A
 
+
+#define SM_PAL_PATH "/0000000100000002v514.wad" //TODO: fuck I need to add an ntsc version too
+WAD SMWad;
+
+extern "C" {
+    extern void udelay(int us);
+};
+
 static const unsigned char FSAccessPattern[] =
 {
     0x9B, 0x05, 0x40, 0x03, 0x99, 0x05, 0x42, 0x8B,
@@ -152,7 +160,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    #ifndef TEST_MODE //Define to disable IOS calls for dirty Dolphin testing of the UI
     printf("Initializing FAT\n");
     Debug("Initializing FAT\n");
 
@@ -163,42 +170,38 @@ int main(int argc, char **argv) {
     }
 
     PatchIOS(true);
-    loadIOSModules();
+    loadIOSModules(); //TODO: move this check further down
     printf("\x1b[2;0HInitialization complete.");
-    #endif
 
     // This function initialises the attached controllers
     PAD_Init();
     WPAD_Init();
 
     Debug("Starting install\n");
-    bool nowifi = true;
+    bool Install_IOS = true;
+    bool Install_SM = true;
+    bool Install_Prii = true;
     bool confirmInstall = false;
     do {
         printf("\x1b[2J");
         fflush(stdout);
-        printf("\x1b[47m\x1b[31m\x1b[1;25HWii mini SD Patcher v0.1-Beta2\x1b[0;80H");
+        printf("\x1b[47m\x1b[31m\x1b[1;25HWii mini SD Patcher v1.0-Beta1\x1b[0;80H");
         printf("\x1b[5;1H\x1b[40m\x1b[37mPlease make sure the following files are present\nin the top-level directory of your USB drive:\n");
         //41 + fileExists(file) Sets the bgcolor to red if file is missing, green if present
-        printf("\x1b[42m    IOS36-64-3608.wad\n"); // these are checked for presence in loadIOSModules
-        printf("\x1b[42m    IOS58-64-6176.wad\n");
-        printf("\x1b[42m    IOS80-64-6944.wad\n");
-        //printf("\x1b[%dm    0000000100000002v514.wad\n", 41 + fileExists("/0000000100000002v514.wad")); -- will be added in the future
-        printf("\x1b[14;1H\x1b[40mThese files can be obtained from NUS using sharpii or NUSDownloader\n\n");
-        printf("Start/Home: Run install process\tA+B: Exit\n");
+        printf("\x1b[42m    IOS36-64-v3608.wad\n"); // these are checked for presence in loadIOSModules // TODO: make it not do dat
+        printf("\x1b[42m    IOS58-64-v6176.wad\n");
+        printf("\x1b[42m    IOS80-64-v6944.wad\n");
+        printf("\x1b[%dm    0000000100000002v514.wad\n", 41 + fileExists("/0000000100000002v514.wad"));
+        printf("\x1b[11;1H\x1b[40mThese files can be obtained from NUS using sharpii or NUSDownloader\n\n");
+        printf("\x1b[14;0HSelect the desired install options:");
+        printf("\x1b[15;0HRight/Left: Toggle option\tUp/Down: Move cursor\nStart/Home: Run install process\tA+B: Exit");
+        //printf("Start/Home: Run install process\tA+B: Exit\n");
 
         printf("\x1b[24;1HBased on RVLoader Installer v1.5 by Aurelio,\n without whose help this would have never been possible.");
         printf("\x1b[26;1HAdapted for the Wii mini Hacking community by Devnol.");
         printf("\x1b[27;1HPowered by devkitPPC, Divine Pizza and mediocre quality souvlaki.");
 
-        
-        
-
-        // Option selector will be readded in future versions for other features
-        //printf("\x1b[7;0HSelect the desired install options:");
-        //printf("\x1b[14;0HRight/Left: Toggle option\tUp/Down: Move cursor\nStart/Home: Run install process\tA+B: Exit");
-
-        //u8 cursor = 0;
+        u8 cursor = 0;
         while (1) {
             PAD_ScanPads();
             WPAD_ScanPads();
@@ -208,9 +211,10 @@ int main(int argc, char **argv) {
             int wDown = WPAD_ButtonsDown(0);
             int wHeld = WPAD_ButtonsHeld(0);
 
-            /*if (down & PAD_BUTTON_DOWN || wDown & WPAD_BUTTON_DOWN) {
-                if (cursor < 1)
+            if (down & PAD_BUTTON_DOWN || wDown & WPAD_BUTTON_DOWN) {
+                if ((cursor < 2 && !Install_SM) || cursor < 1)  { //don't allow disabling IOS patch if install sm is selected
                     cursor++;
+                }
             }
 
             if (down & PAD_BUTTON_UP || wDown & WPAD_BUTTON_UP) {
@@ -219,11 +223,15 @@ int main(int argc, char **argv) {
             }
 
             if (down & PAD_BUTTON_LEFT || wDown & WPAD_BUTTON_LEFT || down & PAD_BUTTON_RIGHT || wDown & WPAD_BUTTON_RIGHT) {
-                if (cursor == 0)
-                    nowifi = !nowifi;
+                if (cursor == 0) {
+                    Install_SM = !Install_SM;
+                    Install_IOS = (Install_SM || 1); //forbid installing sm without ios
+                }
                 if (cursor == 1)
-                    vga = !vga;
-            }*/
+                    Install_Prii = !Install_Prii;
+                if (cursor == 2)
+                    Install_IOS = !Install_IOS;
+            }
 
             if (down & PAD_BUTTON_START || wDown & WPAD_BUTTON_HOME)
                 break;
@@ -234,9 +242,9 @@ int main(int argc, char **argv) {
                 printf("\x1b[2;0HExitting...");
                 exit(0);
             }
-
-            //printf("\x1b[9;0H%c Patch out WiFi: %s", (cursor == 0) ? '>' : ' ', nowifi ? "Yes" : "No ");
-            //printf("\x1b[10;0H%c Enable VGA: %s", (cursor == 1) ? '>' : ' ', vga ? "Yes" : "No ");
+            printf("\x1b[17;0H%c Install System Menu: %s", (cursor == 0) ? '>' : ' ', Install_SM ? "Yes" : "No ");
+            printf("\x1b[18;0H%c Install Priiloader: %s", (cursor == 1) ? '>' : ' ', Install_Prii ? "Yes" : "No ");
+            printf("\x1b[19;0H%c Install IOS with SD support: %s", (cursor == 2) ? '>' : ' ', Install_IOS ? "Yes" : "No ");
 
             VIDEO_WaitVSync();
         }
@@ -244,7 +252,9 @@ int main(int argc, char **argv) {
         printf("\x1b[2J");
         fflush(stdout);
         printf("\x1b[2;0HYou have selected:");
-        printf("\x1b[4;0HInstall nowifi IOS for SD support : %s", nowifi ? "Yes" : "No ");
+        printf("\x1b[4;0HInstall System Menu : %s", Install_SM ? "Yes" : "No ");
+        printf("\x1b[5;0HInstall Priiloader : %s", Install_Prii ? "Yes" : "No ");
+        printf("\x1b[6;0HInstall IOS with SD support: %s", Install_IOS ? "Yes" : "No ");
         printf("\x1b[7;0HHold the Start/Home button for 2 seconds to begin the install process.\nPress B to return to the previous screen.");
 
         u64 timer = gettime();
@@ -278,21 +288,51 @@ int main(int argc, char **argv) {
     fflush(stdout);
     printf("\x1b[2;0HBeginning installation\n");
 
-    installIOS(36, 236, true, true); //Install a patched IOS36 with NoWiFi into slot 236
-    //installIOS(58, 240, false, true); //Install a copy of IOS58 with NoWiFi into slot 240
-    //installIOS(80, 241, false, true); //Install a copy of IOS80 with NoWiFi into slot 241
+    if (Install_IOS) {
+        installIOS(36, 236, true, true); //Install a patched IOS36 with NoWiFi into slot 236
+        //Install IOSes 36, 58, 80 with NoWiFi
+        installIOS(36, 36, false, true);
+        installIOS(58, 58, false, true);
+        installIOS(80, 80, false, true);
+        printf("Finished IOS install\n");
+        if (Install_SM) { //For you own good you can't install the Wii SM without Wii IOSes because funny brick will occur
+            printf("Installing System Menu\n");
+            //TODO: Add check for installed SM region 
+            if (openWAD(SM_PAL_PATH, &SMWad)) {
+                //Change title version to avoid error -1035
+                if (SMWad.tmd->TitleVersion == 0x202) { //if SM is PAL set version to v4690
+                    SMWad.tmd->TitleVersion = 0x1252;
+                } else if (SMWad.tmd->TitleVersion == 0x201) { //if NTSC set version to v4689
+                    SMWad.tmd->TitleVersion = 0x1251; 
+                } else {
+                    printf("Invalid System Menu wad, please use v4.3U/E");
+                    udelay(3000000);
+                    exit(0);
+                }
+                s32 ret = installWAD(&SMWad);
+                if (ret != 0) {
+                    printf("Something VERY bad happened. Manually reinstall the System Menu IMMEDIATELY!!\nIf you exit the hbc without installing the SM your console WILL be permabricked!\n");
+                    printf("Priiloader will now be installed as a last ditch effort to\nSave anything that can be saved. Please wait for it to complete,\nthen reinstall your System Menu using a WAD manager.\n");
+                    udelay(10000000);
+                    installPriiloader(); //forcibly install priiloader as a last line of defense against the eternal doorstopification
+                }
+            } else {
+                printf("Error loading System Menu WAD\n");
+                udelay(3000000);
+                exit(0);
+            }
+            
+        }
+    }
 
-    //Install IOSes 36, 58, 80 with NoWiFi
-    installIOS(36, 36, false, true);
-    installIOS(58, 58, false, true);
-    installIOS(80, 80, false, true);
 
-    printf("Finished IOS install\n");
-    printf("Exiting...");
-    printf("Now installing Priiloader\n");
     //Install Priiloader
-    installPriiloader(0);
+    if (Install_Prii) {
+        printf("Now installing Priiloader\n");
+        installPriiloader();
+    }
 
+    printf("Exitting...");
     exit(0);
 
     while (1) {

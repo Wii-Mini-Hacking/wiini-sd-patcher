@@ -19,9 +19,9 @@ extern "C" {
     extern void udelay(int us);
 };
 
-#define IOS36_WAD_PATH "/IOS36-64-3608.wad"
-#define IOS58_WAD_PATH "/IOS58-64-6176.wad"
-#define IOS80_WAD_PATH "/IOS80-64-6944.wad"
+#define IOS36_WAD_PATH "/IOS36-64-v3608.wad"
+#define IOS58_WAD_PATH "/IOS58-64-v6176.wad"
+#define IOS80_WAD_PATH "/IOS80-64-v6944.wad"
 
 static u8 commonkey[16] = {0xeb, 0xe4, 0x2a, 0x22, 0x5e, 0x85, 0x93, 0xe4, 0x48, 0xd9, 0xc5, 0x45, 0x73, 0x81, 0xaa, 0xf7};
 
@@ -242,14 +242,14 @@ int patch_patch_fsperms(u8 *buf, u32 size) {
     return match_count;
 }
 
-s32 installIOSWAD(WAD* IOSWad) {
+s32 installWAD(WAD* Wad) {
     s32 ret;
     s32 cfd;
 
     printf("Installing ticket...\n");
-    if (((u8*)(IOSWad->tik))[0x1F1] > 1)
-        ((u8*)(IOSWad->tik))[0x1F1] = 0x00; /* -1029 fix */
-    ret = ES_AddTicket((signed_blob*)IOSWad->tik, STD_SIGNED_TIK_SIZE, (signed_blob*)IOSWad->certs, IOSWad->header.certSize, NULL, 0);
+    if (((u8*)(Wad->tik))[0x1F1] > 1)
+        ((u8*)(Wad->tik))[0x1F1] = 0x00; /* -1029 fix */
+    ret = ES_AddTicket((signed_blob*)Wad->tik, STD_SIGNED_TIK_SIZE, (signed_blob*)Wad->certs, Wad->header.certSize, NULL, 0);
 
     if(ret < 0) {
         printf("ES_AddTicket failed: %d\n",ret);
@@ -257,25 +257,25 @@ s32 installIOSWAD(WAD* IOSWad) {
         return ret;
     }
 
-    ret = ES_AddTitleStart((signed_blob*)IOSWad->tmd, IOSWad->header.tmdSize, IOSWad->certs, IOSWad->header.certSize, NULL, 0);
+    ret = ES_AddTitleStart((signed_blob*)Wad->tmd, Wad->header.tmdSize, Wad->certs, Wad->header.certSize, NULL, 0);
     if (ret < 0) {
         printf("\nES_AddTitleStart returned: %d\n", ret);
         ES_AddTitleCancel();
         return ret;
     }
 
-    for(u16 i = 0; i < IOSWad->tmd->ContentCount; i++) {
-        printf("Adding content ID %08x", IOSWad->tmd->Contents[i].ID);
-        Debug("Adding content ID %08x\n", IOSWad->tmd->Contents[i].ID);
-        u32 bufSize = (IOSWad->tmd->Contents[i].Size + 0x3F) & ~0x3F;
+    for(u16 i = 0; i < Wad->tmd->ContentCount; i++) {
+        printf("Adding content ID %08x", Wad->tmd->Contents[i].ID);
+        Debug("Adding content ID %08x\n", Wad->tmd->Contents[i].ID);
+        u32 bufSize = (Wad->tmd->Contents[i].Size + 0x3F) & ~0x3F;
         u8* tempBuffer = (u8*)memalign(0x20, bufSize);
-        set_encrypt_iv(IOSWad->tmd->Contents[i].Index);
-        encrypt_buffer(IOSWad->data[i], tempBuffer, IOSWad->tmd->Contents[i].Size);
-        cfd = ES_AddContentStart(IOSWad->tmd->TitleID, IOSWad->tmd->Contents[i].ID);
+        set_encrypt_iv(Wad->tmd->Contents[i].Index);
+        encrypt_buffer(Wad->data[i], tempBuffer, Wad->tmd->Contents[i].Size);
+        cfd = ES_AddContentStart(Wad->tmd->TitleID, Wad->tmd->Contents[i].ID);
         if (cfd < 0) {
             free(tempBuffer);
-            printf("\nES_AddContentStart for content #%u cid %u returned: %d\n", i, IOSWad->tmd->Contents[i].ID, cfd);
-            Debug("\nES_AddContentStart for content #%u cid %u returned: %d\n", i, IOSWad->tmd->Contents[i].ID, cfd);
+            printf("\nES_AddContentStart for content #%u cid %u returned: %d\n", i, Wad->tmd->Contents[i].ID, cfd);
+            Debug("\nES_AddContentStart for content #%u cid %u returned: %d\n", i, Wad->tmd->Contents[i].ID, cfd);
             ES_AddTitleCancel();
             return cfd;
         }
@@ -283,8 +283,8 @@ s32 installIOSWAD(WAD* IOSWad) {
         ret = ES_AddContentData(cfd, tempBuffer, bufSize);
         if (ret < 0) {
             free(tempBuffer);
-            printf("\nES_AddContentData for content #%u cid %u returned: %d\n", i, IOSWad->tmd->Contents[i].ID, ret);
-            Debug("\nES_AddContentData for content #%u cid %u returned: %d\n", i, IOSWad->tmd->Contents[i].ID, ret);
+            printf("\nES_AddContentData for content #%u cid %u returned: %d\n", i, Wad->tmd->Contents[i].ID, ret);
+            Debug("\nES_AddContentData for content #%u cid %u returned: %d\n", i, Wad->tmd->Contents[i].ID, ret);
             ES_AddTitleCancel();
             return ret;
         }
@@ -292,8 +292,8 @@ s32 installIOSWAD(WAD* IOSWad) {
         ret = ES_AddContentFinish(cfd);
         if (ret < 0) {
             free(tempBuffer);
-            printf("\nES_AddContentFinish for content #%u cid %u returned: %d\n", i, IOSWad->tmd->Contents[i].ID, ret);
-            Debug("\nES_AddContentFinish for content #%u cid %u returned: %d\n", i, IOSWad->tmd->Contents[i].ID, ret);
+            printf("\nES_AddContentFinish for content #%u cid %u returned: %d\n", i, Wad->tmd->Contents[i].ID, ret);
+            Debug("\nES_AddContentFinish for content #%u cid %u returned: %d\n", i, Wad->tmd->Contents[i].ID, ret);
             ES_AddTitleCancel();
             return ret;
         }
@@ -558,7 +558,7 @@ void installIOS(u8 slot, u8 newSlot, bool patches, bool nowifi) {
     get_title_key((signed_blob*)wad.tik, key);
     aes_set_key(key);
 
-    installIOSWAD(&wad);
+    installWAD(&wad);
 
     freeWAD(&wad);
 }
