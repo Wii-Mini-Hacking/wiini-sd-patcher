@@ -2,8 +2,11 @@
 
 #include <string>
 #include <gccore.h>
+#include "filenames.h"
 
 #define ALIGNED(x) __attribute__((aligned(x)))
+
+#define NB_SM (sizeof(regionlist) / sizeof(SMRegion))
 
 enum ContentType
 {
@@ -103,3 +106,4 @@ u8* readNANDFile(const char* path, u32* size);
 u8* readSharedContent(const sha1 hash, u32* size);
 void copyWAD(WAD* dst, WAD* src);
 void freeWAD(WAD* wad);
+SMRegion GetSM();

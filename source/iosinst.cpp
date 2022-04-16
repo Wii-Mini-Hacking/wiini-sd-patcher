@@ -14,14 +14,11 @@
 #include "debug.h"
 #include "haxx_certs.h"
 #include "wd_bin.h"
+#include "filenames.h"
 
 extern "C" {
     extern void udelay(int us);
 };
-
-#define IOS36_WAD_PATH "/IOS36-64-v3608.wad"
-#define IOS58_WAD_PATH "/IOS58-64-v6176.wad"
-#define IOS80_WAD_PATH "/IOS80-64-v6944.wad"
 
 static u8 commonkey[16] = {0xeb, 0xe4, 0x2a, 0x22, 0x5e, 0x85, 0x93, 0xe4, 0x48, 0xd9, 0xc5, 0x45, 0x73, 0x81, 0xaa, 0xf7};
 
@@ -99,7 +96,6 @@ static const u16 IOSBootIndex[3] = {0x0D, 0x11, 0x0D};
 static const u32 IOSNModules[3] = {sizeof(IOS36Hashes) / 20, sizeof(IOS58Hashes) / 20, sizeof(IOS80Hashes) / 20};
 static const sha1* IOSHashes[3] = {IOS36Hashes, IOS58Hashes, IOS80Hashes};
 static const sha1* IOSWiFiHashes[3] = {IOS36WiFiHashes, IOS58WiFiHashes, IOS80WiFiHashes};
-static const char* IOSWADPaths[3] = {IOS36_WAD_PATH, IOS58_WAD_PATH, IOS80_WAD_PATH};
 static WAD IOSWads[3];
 
 
@@ -384,10 +380,6 @@ void loadIOSModules() {
 
     //Look for WADs
     for (u32 slot = 0; slot < 3; slot++) {
-        //if (match[slot] != IOSNModules[slot]) {
-            //printf("Couldn't find all modules for IOS%u. Checking for WAD...\n", iosSlotList[slot]);
-        printf("Checking for IOS%d WAD...\n", iosSlotList[slot]);
-           
         if (!fileExists(IOSWADPaths[slot])) {
             printf("Couldn't find IOS%u WAD at %s\n", iosSlotList[slot], IOSWADPaths[slot]);
             udelay(3000000);

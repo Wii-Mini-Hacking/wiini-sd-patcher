@@ -20,14 +20,13 @@
 #include "debug.h"
 #include "iosinst.h"
 #include "haxx_certs.h"
+#include "filenames.h"
 
 static void *xfb = NULL;
 static GXRModeObj *rmode = NULL;
 
 #define MEM_PROT        0xD8B420A
 
-
-#define SM_PAL_PATH "/0000000100000002v514.wad" //TODO: fuck I need to add an ntsc version too
 WAD SMWad;
 
 extern "C" {
@@ -160,6 +159,7 @@ int main(int argc, char **argv) {
         }
     }
 
+
     printf("Initializing FAT\n");
     Debug("Initializing FAT\n");
 
@@ -169,30 +169,59 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    PatchIOS(true);
-    loadIOSModules(); //TODO: move this check further down
-    printf("\x1b[2;0HInitialization complete.");
-
     // This function initialises the attached controllers
     PAD_Init();
     WPAD_Init();
+
+    PatchIOS(true);
+    udelay(5000000); //Naively wait for wpad sync
+    printf("\x1b[2;0HInitialization complete.");
+
+    SMRegion InstalledSM = GetSM();
+
+    printf("Installed SM Version: %d\n", InstalledSM.version);
+    int SM_REGION; //0 for NTSC, 1 for PAL
+
+    PAD_ScanPads();
+    WPAD_ScanPads();
+
+    if ((InstalledSM.version == 4609) || (InstalledSM.version == 4689)){SM_REGION = 0;}
+    else if ((InstalledSM.version == 4610) || (InstalledSM.version == 4690)){SM_REGION = 1;}
+    else if (!((PAD_ButtonsHeld(0) & PAD_BUTTON_X || WPAD_ButtonsHeld(0) & WPAD_BUTTON_1) && (PAD_ButtonsHeld(0) & PAD_BUTTON_Y || WPAD_ButtonsHeld(0) & WPAD_BUTTON_A))){
+        printf("\x1b[47m\x1b[31mWarning: running this homebrew on a non-mini Wii\nis unneeded and can have unintended side effects.\n");
+        printf("If you want to proceed anyway, open the app again and hold 1+A/x+y on startup.\n");
+        printf("exiting...\n");
+        udelay(10000000);
+        exit(0);
+    } 
+    else if (InstalledSM.region == 0x45){SM_REGION = 0;} //generalise to all pal/ntsc consoles if skip on check
+    else if (InstalledSM.region  == 0x50){SM_REGION = 1;}
+    else {
+        printf("Error: Unknown region. Please contact the developers.\n");
+        printf("This homebrew does not support Japanese or Korean consoles.\n");
+        printf("exiting...\n");
+        udelay(5000000);
+        exit(0); 
+    }
 
     Debug("Starting install\n");
     bool Install_IOS = true;
     bool Install_SM = true;
     bool Install_Prii = true;
     bool confirmInstall = false;
+
+
     do {
         printf("\x1b[2J");
         fflush(stdout);
-        printf("\x1b[47m\x1b[31m\x1b[1;25HWii mini SD Patcher v1.0-Beta1\x1b[0;80H");
+        printf("\x1b[47m\x1b[31m\x1b[1;25HWii mini SD Patcher v1.0\x1b[0;80H");
         printf("\x1b[5;1H\x1b[40m\x1b[37mPlease make sure the following files are present\nin the top-level directory of your USB drive:\n");
-        //41 + fileExists(file) Sets the bgcolor to red if file is missing, green if present
-        printf("\x1b[42m    IOS36-64-v3608.wad\n"); // these are checked for presence in loadIOSModules // TODO: make it not do dat
-        printf("\x1b[42m    IOS58-64-v6176.wad\n");
-        printf("\x1b[42m    IOS80-64-v6944.wad\n");
-        printf("\x1b[%dm    0000000100000002v514.wad\n", 41 + fileExists("/0000000100000002v514.wad"));
-        printf("\x1b[11;1H\x1b[40mThese files can be obtained from NUS using sharpii or NUSDownloader\n\n");
+        
+        printf("\x1b[%dm    %s\n", 41 + fileExists(IOSWADPaths[0]), IOSWADPaths[0]); //41 + fileExists(file) Sets the bgcolor to red if file is missing, green if present
+        printf("\x1b[%dm    %s\n", 41 + fileExists(IOSWADPaths[1]), IOSWADPaths[1]);
+        printf("\x1b[%dm    %s\n", 41 + fileExists(IOSWADPaths[2]), IOSWADPaths[2]);
+        printf("\x1b[%dm    %s\n", 41 + fileExists(SMWADPaths[SM_REGION]), SMWADPaths[SM_REGION]);
+        printf("\x1b[11;1H\x1b[40mThese files can be obtained from NUS using sharpii-netcore or another program.\n\n");
         printf("\x1b[14;0HSelect the desired install options:");
         printf("\x1b[15;0HRight/Left: Toggle option\tUp/Down: Move cursor\nStart/Home: Run install process\tA+B: Exit");
         //printf("Start/Home: Run install process\tA+B: Exit\n");
@@ -289,6 +318,7 @@ int main(int argc, char **argv) {
     printf("\x1b[2;0HBeginning installation\n");
 
     if (Install_IOS) {
+        loadIOSModules();
         installIOS(36, 236, true, true); //Install a patched IOS36 with NoWiFi into slot 236
         //Install IOSes 36, 58, 80 with NoWiFi
         installIOS(36, 36, false, true);
@@ -297,15 +327,14 @@ int main(int argc, char **argv) {
         printf("Finished IOS install\n");
         if (Install_SM) { //For you own good you can't install the Wii SM without Wii IOSes because funny brick will occur
             printf("Installing System Menu\n");
-            //TODO: Add check for installed SM region 
-            if (openWAD(SM_PAL_PATH, &SMWad)) {
-                //Change title version to avoid error -1035
-                if (SMWad.tmd->TitleVersion == 0x202) { //if SM is PAL set version to v4690
-                    SMWad.tmd->TitleVersion = 0x1252;
-                } else if (SMWad.tmd->TitleVersion == 0x201) { //if NTSC set version to v4689
-                    SMWad.tmd->TitleVersion = 0x1251; 
+            if (openWAD(SMWADPaths[SM_REGION], &SMWad)) {
+                //Change title version to avoid error -1035, also helpful for distinguishability
+                if (SMWad.tmd->TitleVersion == 513) { //if SM is NTSC set version to v4689
+                    SMWad.tmd->TitleVersion = 4689; 
+                } else if (SMWad.tmd->TitleVersion == 514) { //if PAL set version to v4690
+                    SMWad.tmd->TitleVersion = 4690;
                 } else {
-                    printf("Invalid System Menu wad, please use v4.3U/E");
+                    printf("Invalid System Menu wad, please use v4.3U/E\n");
                     udelay(3000000);
                     exit(0);
                 }

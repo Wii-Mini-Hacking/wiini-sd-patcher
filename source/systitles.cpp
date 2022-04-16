@@ -6,8 +6,13 @@
 #include "systitles.h"
 #include "debug.h"
 #include "haxx_certs.h"
+#include "filenames.h"
 
 static u8 commonkey[16] = {0xeb, 0xe4, 0x2a, 0x22, 0x5e, 0x85, 0x93, 0xe4, 0x48, 0xd9, 0xc5, 0x45, 0x73, 0x81, 0xaa, 0xf7};
+
+#define TITLE_ID(x,y)		(((u64)(x) << 32) | (y))
+
+#define SIGNATURE_PAYLOAD(x) ((tmd *)(void *)(((u8*)(x)) + SIGNATURE_SIZE(x)))
 
 void get_title_key(signed_blob *s_tik, u8 *key) {
     static u8 iv[16] ATTRIBUTE_ALIGN(0x20);
@@ -202,4 +207,31 @@ void freeWAD(WAD* wad) {
     free(wad->tik);
     free(wad->tmd);
     free(wad->data);
+}
+
+SMRegion GetSM()
+{
+    u32 tmd_size;
+        
+    u64 title = TITLE_ID(1, 2);
+    static u8 tmd_buf[MAX_SIGNED_TMD_SIZE] ATTRIBUTE_ALIGN(32);
+    
+    int ret = ES_GetStoredTMDSize(title, &tmd_size);
+        
+    // Some of this code adapted from bushing's title_lister.c
+    signed_blob *s_tmd = (signed_blob *)tmd_buf;
+    ret = ES_GetStoredTMD(title, s_tmd, tmd_size);
+    if (ret < 0){
+        //printf("Error! ES_GetStoredTMD: %d\n", ret);
+        return (SMRegion){-1,-1};
+    }
+    tmd *t = SIGNATURE_PAYLOAD(s_tmd);
+    ret = t->title_version;
+    uint i = 0;
+    while( i <= NB_SM)
+    {
+        if(	regionlist[i].version == ret) return regionlist[i];
+        i++;
+    }
+    return (SMRegion){0,0}; ;
 }
